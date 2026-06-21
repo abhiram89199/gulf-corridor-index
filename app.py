@@ -1,18 +1,17 @@
 """
-Gulf Corridor Index (GCI)
+Gulf Corridor Index (GCI) - Light Theme
 ============================================
-A maritime-intelligence style decision tool that scores 6 Gulf shipping
-routes against current Hormuz crisis conditions and recommends the best
-route based on what matters most: cost, time, or safety.
+A maritime-intelligence decision tool that scores 6 Gulf shipping routes
+against current Hormuz crisis conditions and recommends the best route
+based on what matters most: cost, time, or safety.
 
 Built by Sai Abhiram Manoj Kalluri
 MBA Candidate, Supply Chain & Global Operations, Middlesex University Dubai
-
-To run locally:
-    streamlit run app.py
 """
 
 import streamlit as st
+import base64
+from pathlib import Path
 from route_data import (
     GCI_CURRENT_SCORE, GCI_STATUS_LABEL, GCI_LAST_UPDATED,
     GCI_SOURCE_NOTE, GCI_HISTORY, ROUTES,
@@ -26,29 +25,39 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# ── PROFESSIONAL STYLING ──────────────────────────────────────────
-# Maritime intelligence aesthetic: deep navy, amber signal accent,
-# monospace data figures the way real shipping indices display.
+def _load_b64(filename):
+    try:
+        return base64.b64encode((Path(__file__).parent / filename).read_bytes()).decode()
+    except Exception:
+        return ""
+
+BG_B64 = _load_b64("logistics_bg.png")
+
+# ── LIGHT THEME STYLING ───────────────────────────────────────────
+# Pale logistics background, dark navy text, soft white cards.
+# Space Grotesk display, Inter body, IBM Plex Mono for data figures.
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
-/* App background and base */
 .stApp {
-    background: #0B1622;
-    color: #C9D6E3;
+    background-image:
+        linear-gradient(180deg, rgba(244,248,252,0.55) 0%, rgba(238,244,250,0.80) 100%),
+        url("data:image/png;base64,BG_B64_PLACEHOLDER");
+    background-size: cover;
+    background-position: center top;
+    background-attachment: fixed;
+    color: #15293D;
 }
 .block-container {
     padding-top: 2.5rem;
     max-width: 1100px;
 }
-
-/* Hide default streamlit chrome */
 #MainMenu, footer, header {visibility: hidden;}
 
-/* Typography */
 html, body, [class*="css"] {
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: 'Inter', sans-serif;
+    color: #15293D;
 }
 
 /* Masthead */
@@ -57,44 +66,46 @@ html, body, [class*="css"] {
     font-size: 0.72rem;
     letter-spacing: 0.28em;
     text-transform: uppercase;
-    color: #E8A33D;
+    color: #B26B16;
     margin-bottom: 0.5rem;
 }
 .gci-title {
-    font-family: 'Fraunces', serif;
-    font-size: 2.9rem;
-    font-weight: 600;
-    color: #F4F8FC;
-    line-height: 1.05;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 3.4rem;
+    font-weight: 700;
+    color: #0E2138;
+    line-height: 1.02;
+    letter-spacing: -0.01em;
     margin: 0;
 }
 .gci-sub {
     font-size: 0.98rem;
-    color: #7E91A6;
+    color: #4A6178;
     margin-top: 0.6rem;
     max-width: 620px;
 }
 .gci-rule {
     height: 1px;
-    background: linear-gradient(90deg, #E8A33D 0%, #1E3048 35%, #1E3048 100%);
+    background: linear-gradient(90deg, #D98A2B 0%, #C9D6E3 35%, #C9D6E3 100%);
     border: none;
     margin: 1.8rem 0;
 }
 
 /* Index readout card */
 .gci-index-card {
-    background: #0F1E2E;
-    border: 1px solid #1E3048;
-    border-left: 3px solid #E8A33D;
-    border-radius: 4px;
+    background: rgba(255,255,255,0.82);
+    border: 1px solid #D4E0EC;
+    border-left: 3px solid #D98A2B;
+    border-radius: 6px;
     padding: 1.5rem 1.6rem;
+    box-shadow: 0 2px 14px rgba(20,41,61,0.06);
 }
 .gci-index-label {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 0.7rem;
     letter-spacing: 0.22em;
     text-transform: uppercase;
-    color: #7E91A6;
+    color: #6B8198;
 }
 .gci-index-value {
     font-family: 'IBM Plex Mono', monospace;
@@ -105,7 +116,7 @@ html, body, [class*="css"] {
 }
 .gci-index-max {
     font-size: 1.6rem;
-    color: #45586D;
+    color: #A9BACB;
 }
 .gci-status {
     font-size: 0.95rem;
@@ -115,7 +126,7 @@ html, body, [class*="css"] {
 .gci-updated {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 0.72rem;
-    color: #5C7088;
+    color: #7E91A6;
     margin-top: 0.7rem;
 }
 
@@ -125,92 +136,84 @@ html, body, [class*="css"] {
     font-size: 0.74rem;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: #E8A33D;
+    color: #B26B16;
     margin: 0.5rem 0 0.2rem 0;
 }
 
 /* Recommendation banner */
 .gci-reco {
-    background: #112436;
-    border: 1px solid #214A38;
-    border-left: 3px solid #4CC38A;
-    border-radius: 4px;
+    background: rgba(240,250,244,0.9);
+    border: 1px solid #B7DEC8;
+    border-left: 3px solid #2FA86C;
+    border-radius: 6px;
     padding: 1.1rem 1.3rem;
     margin-top: 0.4rem;
+    box-shadow: 0 2px 14px rgba(20,41,61,0.05);
 }
 .gci-reco-label {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 0.68rem;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: #4CC38A;
+    color: #2FA86C;
 }
 .gci-reco-route {
-    font-size: 1.35rem;
-    font-weight: 700;
-    color: #F4F8FC;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.45rem;
+    font-weight: 600;
+    color: #0E2138;
     margin: 0.2rem 0;
 }
 .gci-reco-reason {
     font-size: 0.9rem;
-    color: #A9BACB;
+    color: #3E556C;
 }
 
-/* Radio + select labels */
 .stRadio label, .stSelectbox label {
-    color: #A9BACB !important;
+    color: #3E556C !important;
     font-size: 0.9rem !important;
 }
 
-/* Dataframe tweaks */
 [data-testid="stDataFrame"] {
-    border: 1px solid #1E3048;
-    border-radius: 4px;
+    border: 1px solid #D4E0EC;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.75);
 }
 
-/* Expander */
-.streamlit-expanderHeader {
-    background: #0F1E2E;
-    font-family: 'IBM Plex Sans', sans-serif;
-}
-
-/* Footer note */
 .gci-footer {
     font-size: 0.76rem;
-    color: #5C7088;
+    color: #6B8198;
     line-height: 1.6;
-    border-top: 1px solid #1E3048;
+    border-top: 1px solid #D4E0EC;
     padding-top: 1.2rem;
     margin-top: 2.5rem;
 }
 .gci-method {
     font-size: 0.82rem;
-    color: #7E91A6;
+    color: #4A6178;
     line-height: 1.6;
 }
 </style>
-""", unsafe_allow_html=True)
+""".replace("BG_B64_PLACEHOLDER", BG_B64), unsafe_allow_html=True)
 
 # ── MASTHEAD ──────────────────────────────────────────────────────
-st.markdown('<div class="gci-eyebrow">Hormuz Crisis Intelligence &middot; Day 109</div>', unsafe_allow_html=True)
-st.markdown('<h1 class="gci-title">Gulf Corridor Index</h1>', unsafe_allow_html=True)
-st.markdown(
-    '<p class="gci-sub">A risk-adjusted benchmark and route decision tool for Gulf shipping during the 2026 Strait of Hormuz disruption. Every figure is sourced, dated, and labeled for confidence.</p>',
-    unsafe_allow_html=True,
-)
+st.markdown("""
+<div class="gci-eyebrow">Hormuz Crisis Intelligence &middot; Day 109</div>
+<h1 class="gci-title">Gulf Corridor Index</h1>
+<p class="gci-sub">A risk-adjusted benchmark and route decision tool for Gulf shipping during the 2026 Strait of Hormuz disruption. Every figure is sourced, dated, and labeled for confidence.</p>
+""", unsafe_allow_html=True)
 st.markdown('<hr class="gci-rule">', unsafe_allow_html=True)
 
 # ── TOP SECTION ───────────────────────────────────────────────────
 col_left, col_right = st.columns([1, 1.25], gap="large")
 
 with col_left:
-    # Color logic for the index value
     if GCI_CURRENT_SCORE >= 75:
-        val_color = "#E5484D"
+        val_color = "#D33A3F"
     elif GCI_CURRENT_SCORE >= 50:
-        val_color = "#E8A33D"
+        val_color = "#C77B1E"
     else:
-        val_color = "#4CC38A"
+        val_color = "#2FA86C"
 
     st.markdown(f"""
     <div class="gci-index-card">
@@ -223,7 +226,7 @@ with col_left:
 
     st.markdown('<div class="gci-section" style="margin-top:1.4rem;">Index Trend</div>', unsafe_allow_html=True)
     trend_data = {str(h["date"]): h["score"] for h in GCI_HISTORY}
-    st.line_chart(trend_data, height=180, color="#E8A33D")
+    st.line_chart(trend_data, height=180, color="#C77B1E")
 
     with st.expander("How is this index calculated?"):
         st.markdown(f'<div class="gci-method">{GCI_SOURCE_NOTE}</div>', unsafe_allow_html=True)
@@ -286,10 +289,7 @@ st.dataframe(
     hide_index=True,
     column_config={
         "Match": st.column_config.ProgressColumn(
-            "Match score",
-            min_value=0,
-            max_value=100,
-            format="%.1f",
+            "Match score", min_value=0, max_value=100, format="%.1f",
         ),
     },
 )
